@@ -1,8 +1,6 @@
 package com.bignerdranch.android.geomain.controller
 
 import android.annotation.SuppressLint
-import android.app.Activity
-import android.app.ActivityOptions
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -12,14 +10,16 @@ import android.widget.Button
 import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.ActivityResult
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.SavedStateViewModelFactory
 import androidx.lifecycle.ViewModelProvider
-import com.bignerdranch.android.geomain.viewmodel.QuizViewModel
 import com.bignerdranch.android.geomain.R
+import com.bignerdranch.android.geomain.viewmodel.QuizViewModel
 
 private const val TAG = "MainActivity"
-private const val REQUEST_CODE_CHEAT = 0
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
 
@@ -77,6 +77,13 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         updateQuestion()
     }
 
+    override fun onStart() {
+        super.onStart()
+        Log.d(TAG, "onStart() called")
+
+        sdkTextView.text = getString(R.string.api_level, sdkVersion)
+    }
+
     private fun checkAnswer(userAnswer: Boolean) {
         val correctAnswer = quizViewModel.currentQuestionAnswer
 
@@ -97,13 +104,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         questionTextView.setText(questionTextResId)
     }
 
-    override fun onStart() {
-        super.onStart()
-        Log.d(TAG, "onStart() called")
-
-        sdkTextView.text = getString(R.string.api_level, sdkVersion)
-    }
-
     @SuppressLint("RestrictedApi")
     override fun onClick(view: View?) {
         when(view?.id) {
@@ -118,22 +118,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             R.id.cheat_btn -> {
-                if (quizViewModel.numbCheatingQuestion in minNumbOfPrompts until maxNumbOfPrompts)
-                {
+                if (quizViewModel.numbCheatingQuestion in minNumbOfPrompts until maxNumbOfPrompts) {
                     val answerIsTrue = quizViewModel.currentQuestionAnswer
                     val intent = CheatActivity.newIntent(this@MainActivity, answerIsTrue)
 
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                        val options = ActivityOptions.makeClipRevealAnimation(
-                            view,
-                            0, 0,
-                            view.width, view.height
-                        )
-
-                        startActivityForResult(intent, REQUEST_CODE_CHEAT, options.toBundle())
-                    } else {
-                        startActivityForResult(intent, REQUEST_CODE_CHEAT)
-                    }
+                    startCheatActivityForResult.launch(intent)
                 } else {
                     Toast.makeText(this, R.string.no_prompts_toast, Toast.LENGTH_LONG).show()
                 }
@@ -141,14 +130,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-
-        if (resultCode != Activity.RESULT_OK)
-            return
-
-        if (requestCode == REQUEST_CODE_CHEAT) {
-            quizViewModel.cheatStatus = data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
+    private val startCheatActivityForResult:ActivityResultLauncher<Intent>
+    = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+        if (result.resultCode == RESULT_OK) {
+            quizViewModel.cheatStatus = result.data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
 
             if (quizViewModel.cheatStatus) {
                 quizViewModel.cheatingDetected()
