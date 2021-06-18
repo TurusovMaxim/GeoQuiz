@@ -69,17 +69,17 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             checkAnswer(false)
         }
 
-        quizViewModel.questionIndex = quizViewModel.getCurrQuestionIndex()
-        quizViewModel.cheatIndex = quizViewModel.getCurrCheatingIndex()
-        quizViewModel.cheatStatus = quizViewModel.getCurrCheatingStatus()
-        quizViewModel.numbCheatingQuestion = quizViewModel.getCurrNumbCheatingOfQuestion()
+        quizViewModel.questionIdx = quizViewModel.getCurrQuestionIdx()
+        quizViewModel.cheatingIdx = quizViewModel.getCurrCheatingIdx()
+        quizViewModel.cheatingBtnPressStatus = quizViewModel.getCurrCheatingBtnPressStatus()
+        quizViewModel.numbOfCheatingQns = quizViewModel.getCurrNumbOfCheatingQn()
 
-        val cheatingQuestions = quizViewModel.getListOfCheatingQuestion()
+        val cheatingQuestions = quizViewModel.getCurrListOfCheatingQns()
         if (cheatingQuestions != null) {
-            quizViewModel.cheatingQuestions = cheatingQuestions
+            quizViewModel.listOfCheatingQns = cheatingQuestions
 
-            for (element in quizViewModel.cheatingQuestions) {
-                quizViewModel.setCheatingQuestion(element)
+            for (element in quizViewModel.listOfCheatingQns) {
+                quizViewModel.setQuestionAsCheating(element)
             }
         }
 
@@ -94,10 +94,10 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun checkAnswer(userAnswer: Boolean) {
-        val correctAnswer = quizViewModel.currentQuestionAnswer
+        val correctAnswer = quizViewModel.currQuestionAnswer
 
         val messageResId = when {
-            quizViewModel.isCheating() -> R.string.judgment_toast
+            quizViewModel.isUserCheated() -> R.string.judgment_toast
 
             userAnswer == correctAnswer -> R.string.correct_toast
 
@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     }
 
     private fun updateQuestion() {
-        val questionTextResId = quizViewModel.currentQuestionText
+        val questionTextResId = quizViewModel.currQuestionText
 
         questionTextView.setText(questionTextResId)
     }
@@ -127,8 +127,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             R.id.cheat_btn -> {
-                if (quizViewModel.numbCheatingQuestion in minNumbOfPrompts until maxNumbOfPrompts) {
-                    val answerIsTrue = quizViewModel.currentQuestionAnswer
+                if (quizViewModel.numbOfCheatingQns in minNumbOfPrompts until maxNumbOfPrompts) {
+                    val answerIsTrue = quizViewModel.currQuestionAnswer
                     val intent = CheatActivity.newIntent(this@MainActivity, answerIsTrue)
 
                     startCheatActivityForResult.launch(intent)
@@ -142,18 +142,18 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
     private val startCheatActivityForResult:ActivityResultLauncher<Intent> =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         if (result.resultCode == RESULT_OK) {
-            quizViewModel.cheatStatus = result.data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
+            quizViewModel.cheatingBtnPressStatus = result.data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
 
-            if (quizViewModel.cheatStatus) {
-                quizViewModel.cheatingDetected()
-                quizViewModel.numbCheatingQuestion += 1
+            if (quizViewModel.cheatingBtnPressStatus) {
+                quizViewModel.setQuestionAsCheating(quizViewModel.questionIdx)
+                quizViewModel.numbOfCheatingQns += 1
 
-                quizViewModel.cheatingQuestions.add(quizViewModel.questionIndex)
+                quizViewModel.listOfCheatingQns.add(quizViewModel.questionIdx)
 
                 val numbOfPrompts = this.resources.getQuantityString(
                     R.plurals.numb_of_prompts_toast,
-                    maxNumbOfPrompts - quizViewModel.numbCheatingQuestion,
-                    maxNumbOfPrompts - quizViewModel.numbCheatingQuestion
+                    maxNumbOfPrompts - quizViewModel.numbOfCheatingQns,
+                    maxNumbOfPrompts - quizViewModel.numbOfCheatingQns
                 )
 
                 Toast.makeText(this, "You have $numbOfPrompts", Toast.LENGTH_LONG).show()
@@ -166,11 +166,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         Log.d(TAG, "onStop() called")
 
         quizViewModel.saveQuestionParam(
-            quizViewModel.questionIndex,
-            quizViewModel.cheatIndex,
-            quizViewModel.cheatStatus,
-            quizViewModel.numbCheatingQuestion,
-            quizViewModel.cheatingQuestions
+            quizViewModel.questionIdx,
+            quizViewModel.cheatingIdx,
+            quizViewModel.numbOfCheatingQns,
+            quizViewModel.cheatingBtnPressStatus,
+            quizViewModel.listOfCheatingQns
         )
     }
 
