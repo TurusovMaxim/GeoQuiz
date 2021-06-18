@@ -11,6 +11,7 @@ private const val QUESTION_INDEX_KEY = "questionIndex"
 private const val CHEAT_INDEX_KEY = "cheatIndex"
 private const val CHEAT_STATUS = "cheatStatus"
 private const val NUMB_CHEATING_QUESTION_KEY = "numbCheatingQuestion"
+private const val LIST_OF_CHEATING_QUESTION_KEY = "listOfCheatingQuestion"
 
 class QuizViewModel(state: SavedStateHandle): ViewModel() {
     private val savedStateHandle = state
@@ -30,6 +31,8 @@ class QuizViewModel(state: SavedStateHandle): ViewModel() {
     var cheatIndex: Int = 0
     var numbCheatingQuestion: Int = 0
     var cheatStatus: Boolean = false
+
+    var cheatingQuestions: MutableList<Int> = mutableListOf()
 
 
     val currentQuestionAnswer: Boolean
@@ -54,17 +57,23 @@ class QuizViewModel(state: SavedStateHandle): ViewModel() {
     fun isCheating(): Boolean =
         questionBank[questionIndex].isCheating
 
+    fun setCheatingQuestion(index: Int) {
+        questionBank[index].isCheating = true
+    }
+
 
     fun saveQuestionParam(
         questionIndex: Int,
         cheatIndex: Int,
         cheatStatus: Boolean,
-        numbCheatingQuestion: Int
+        numbCheatingQuestion: Int,
+        cheatingQuestions: MutableList<Int>
     ) {
         savedStateHandle.set(QUESTION_INDEX_KEY, questionIndex)
         savedStateHandle.set(CHEAT_INDEX_KEY, cheatIndex)
         savedStateHandle.set(CHEAT_STATUS, cheatStatus)
         savedStateHandle.set(NUMB_CHEATING_QUESTION_KEY, numbCheatingQuestion)
+        savedStateHandle.set(LIST_OF_CHEATING_QUESTION_KEY, cheatingQuestions)
     }
 
     fun getCurrQuestionIndex(): Int =
@@ -79,7 +88,10 @@ class QuizViewModel(state: SavedStateHandle): ViewModel() {
         savedStateHandle.get(CHEAT_STATUS) ?: false
 
     fun getCurrNumbCheatingOfQuestion(): Int =
-        savedStateHandle.get(NUMB_CHEATING_QUESTION_KEY) ?: 0
+        savedStateHandle.get(NUMB_CHEATING_QUESTION_KEY)  ?: 0
+
+    fun getListOfCheatingQuestion(): MutableList<Int>? =
+        savedStateHandle.get(LIST_OF_CHEATING_QUESTION_KEY)
 
 
     init {

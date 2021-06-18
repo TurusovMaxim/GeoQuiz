@@ -74,6 +74,15 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         quizViewModel.cheatStatus = quizViewModel.getCurrCheatingStatus()
         quizViewModel.numbCheatingQuestion = quizViewModel.getCurrNumbCheatingOfQuestion()
 
+        val cheatingQuestions = quizViewModel.getListOfCheatingQuestion()
+        if (cheatingQuestions != null) {
+            quizViewModel.cheatingQuestions = cheatingQuestions
+
+            for (element in quizViewModel.cheatingQuestions) {
+                quizViewModel.setCheatingQuestion(element)
+            }
+        }
+
         updateQuestion()
     }
 
@@ -130,14 +139,16 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
         }
     }
 
-    private val startCheatActivityForResult:ActivityResultLauncher<Intent>
-    = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
+    private val startCheatActivityForResult:ActivityResultLauncher<Intent> =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result: ActivityResult ->
         if (result.resultCode == RESULT_OK) {
             quizViewModel.cheatStatus = result.data?.getBooleanExtra(EXTRA_ANSWER_SHOWN, false) ?: false
 
             if (quizViewModel.cheatStatus) {
                 quizViewModel.cheatingDetected()
                 quizViewModel.numbCheatingQuestion += 1
+
+                quizViewModel.cheatingQuestions.add(quizViewModel.questionIndex)
 
                 val numbOfPrompts = this.resources.getQuantityString(
                     R.plurals.numb_of_prompts_toast,
@@ -158,7 +169,8 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             quizViewModel.questionIndex,
             quizViewModel.cheatIndex,
             quizViewModel.cheatStatus,
-            quizViewModel.numbCheatingQuestion
+            quizViewModel.numbCheatingQuestion,
+            quizViewModel.cheatingQuestions
         )
     }
 
